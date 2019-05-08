@@ -1,0 +1,9 @@
+%> python3 depth_finder.py --lpoint 439. 527. --rpoint 443. 507.
+Camera f = 6.95mm [For sanity check]
+Left point: [439.0, 527.0]
+Right point: [443.0, 507.0]
+Left undistorted point: [[[417.12946 521.2146 ]]]
+Right undistorted point: [[[397.7085 523.8338]]]
+point3D: [-460.87744  578.3245  8868.264  ]
+[-460.87744  578.3245  8868.264  ]
+
