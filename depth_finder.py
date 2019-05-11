@@ -1,4 +1,4 @@
-'''R
+'''
 For a given set of (x,y) coordinates for left and right views, compute world coordinates (X,Y,Z)
 
 '''
