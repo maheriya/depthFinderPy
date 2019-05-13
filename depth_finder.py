@@ -17,11 +17,10 @@ img_size = (1280, 1024)
 DEBUG = 0
 
 class depthFinder:
-    def __init__(self, intrinsics, extrinsics, rectify):
+    def __init__(self, intrinsics, extrinsics):
         #fmt = lambda x: "%10.3f" % x
         #np.set_printoptions(formatter={'float_kind':fmt})
 
-        self.rectify = rectify
         ## Read calibration files
         fsi = cv.FileStorage(intrinsics, cv.FILE_STORAGE_READ)
         fse = cv.FileStorage(extrinsics, cv.FILE_STORAGE_READ)
@@ -83,8 +82,6 @@ Find world coordinates from a pair of image correspondence points. For example:
                         help='YAML camera intrinsics calibration file')
     parser.add_argument('--extrinsics', type=str, default="data/calib/extrinsics.yml",
                         help='YAML camera extrinsics calibration file')
-    parser.add_argument('--rectify', action="store_true", default=False,
-                        help='If option is specified, perform rectification. Default is not to perform rectification.')
     reqargs = parser.add_argument_group('required arguments')
     reqargs.add_argument('--lpoint', nargs=2, type=float, required=True,
                         help='Coordinates of point on left image.')
@@ -106,13 +103,9 @@ Find world coordinates from a pair of image correspondence points. For example:
             parser.print_help()
             sys.exit()
 
-    if (args.rectify):
-        print("Rectification will be performed")
-    else:
-        print("Rectification will NOT be performed")
     ## Instantiate depthFinder; This will carry out all the required one-time setup including rectification
-    df = depthFinder(args.intrinsics, args.extrinsics, args.rectify)
-     
+    df = depthFinder(args.intrinsics, args.extrinsics)
+
     ## Compute world coordinates from 2D image points
     point3d = df.get3D(args.lpoint, args.rpoint)
     if DEBUG:

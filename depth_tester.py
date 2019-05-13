@@ -26,7 +26,7 @@ if __name__ == '__main__':
     extrinsics = "data/calib/extrinsics.yml"
 
     ## Instantiate depthFinder; This will carry out all the required one-time setup including rectification
-    df = depth_finder.depthFinder(intrinsics, extrinsics, rectify=True)
+    df = depth_finder.depthFinder(intrinsics, extrinsics)
 
 
     ##-#######################################################################################
@@ -135,6 +135,45 @@ if __name__ == '__main__':
     print("RMS error: {:.0f}".format(erms))  ## COMMENT: This is quite small. This means that our X,Y,Z are correct, 
     #                                                    just that the absolute (0,0,0) are not at a known accurate position
     #                                                    at the center of the camera sensor 
+
+    ##-#######################################################################################
+    ## Test 2: 2 balls on the ground. New images
+    ## Available measurements: 
+    ##  Image coordinates: (x,y) on left+right images of 2 balls
+    ##  World coordinates: (X,Y,Z) of both balls
+    ##-#######################################################################################
+    ## First picture
+    ## Left point: [373, 536]
+    ## Right point: [383, 499]
+    ## Left undistorted point: [[[322.16092 513.7557 ]]]
+    ## Right undistorted point: [[[423.06592 510.04587]]]
+    ## point3D: [-2.2075872e+00 6.7742485e+01 8.3029316e+03]
+    ## 11/05/19 12:43:42.598 INFO >> Real Word coordinates: X:-2 Y:68 Z:8303
+    ## /mnt/R931GB/basler_test4/LEFT/br_img_1557575000.png
+    ## 
+    ## ==========
+    ## fourth picture:
+    ## Left point: [642, 522]
+    ## Right point: [641, 510]
+    ## Left undistorted point: [[[592.833 515.02686]]]
+    ## Right undistorted point: [[[694.8344 509.63968]]]
+    ## point3D: [1301.4044 69.96541 8320.072 ]
+    ## 11/05/19 12:47:22.339 INFO >> Real World coordinates: X:1301 Y:70 Z:8320
+    ## 
+    ## /mnt/R931GB/basler_test4/LEFT/br_img_1557575252.png
+    ##
+    ## L Coordinates :
+    lpoints = np.array([[373., 536.], [642., 522.]],   ## Left  p00, p10
+                        dtype=np.float32) 
+    ## R Coordinate :
+    rpoints = np.array([[383., 499.], [641., 510.]],   ## Right p00, p10
+                        dtype=np.float32) 
+
+    p3D = [df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ]
+    for i in range(len(p3D)):
+        print("Point {}: {}".format(i, p3D[i]))
+
+    #mz = np.array()
 
 
 #EOF
