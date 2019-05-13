@@ -27,6 +27,12 @@ if __name__ == '__main__':
     df = depth_finder.depthFinder(intrinsics, extrinsics, rectify=True)
 
 
+    ##-#######################################################################################
+    ## Test 1: 6 balls on the ground.
+    ## Available measurements: 
+    ##  Image coordinates: (x,y) on left+right images of 6 balls
+    ##  World coordinates: depth Z of each ball, and distances between balls
+    ##-#######################################################################################
     rpoints = []
     ## With new camera position
     ## Left  R0: 415,533    641,519     796,510
@@ -34,11 +40,12 @@ if __name__ == '__main__':
     ## Right R0: 424,502    642,510     801,517
     ## Right R1: 355,588    599,604     783,611
     ##
-    ## L Coordinates 1: R0,C0             // L+R Coordinate 2: R0,C1             // L+R Coordinate 3: R0,C2
-    lpoints = np.array([[415.,533.], [641.,519.], [796.,510.],
-                        [425.,626.], [684.,612.], [860.,598.]], dtype=np.float32)
-    rpoints = np.array([[424.,502.], [642.,510.], [801.,517.],
-                        [355.,588.], [599.,604.], [783.,611.]], dtype=np.float32)
+    ## L Coordinates :  R0,C0
+    lpoints = np.array([[415.,533.], [641.,519.], [796.,510.],                      ## Left  p00, p01, p11
+                        [425.,626.], [684.,612.], [860.,598.]], dtype=np.float32)   ## Left  p10, p11, p12
+    ## R Coordinate : R0,C2
+    rpoints = np.array([[424.,502.], [642.,510.], [801.,517.],                      ## Right p00, p01, p11
+                        [355.,588.], [599.,604.], [783.,611.]], dtype=np.float32)   ## Right p10, p11, p12
 
     p3D = [df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ]
     for i in range(len(p3D)):
@@ -52,6 +59,7 @@ if __name__ == '__main__':
              6996.,                    # z11
              7190.], dtype=np.float32) # z12
     estz = np.array([p[2] for p in p3D])
+    print("Test 1, Results A: Z measurements")
     print("Estimated Z: ", estz)
     print("Measured  Z: ", mz)
     errors = estz - mz;
@@ -69,6 +77,7 @@ if __name__ == '__main__':
     # Measured  Z:  [ 8036  8129  8290  6886  6996  7190]
     # errors    Z:  [  309   220    46   407   272    84]
     # RMS error: 256
+
 
 
 

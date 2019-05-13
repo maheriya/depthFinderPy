@@ -38,32 +38,12 @@ class depthFinder:
         self.R  = fse.getNode('R').mat()
         self.T  = fse.getNode('T').mat()
         
-        if rectify:
-            if DEBUG: print("Performing rectification")
-            # Create rectification matrices (R1, R2, P1, P2, Q)
-            self.R1, self.R2, self.P1, self.P2,  Q, roi1, roi2 = cv.stereoRectify(
-                self.M1, self.D1, self.M2, self.D2, img_size, self.R, self.T,  ## Inputs
-                alpha=-1, flags=0)
-#             self.T1 = np.zeros((3,1), dtype=np.float32)
-#             self.R1 = fse.getNode('R1').mat()
-#             self.R2 = fse.getNode('R2').mat()
-#             self.R1t = np.concatenate((self.R1, self.T1), axis = 1)
-#             self.R2t = np.concatenate((self.R2, self.T), axis = 1)
-#             self.P1 = fse.getNode('P1').mat()
-#             self.P2 = fse.getNode('P2').mat()
+        if DEBUG: print("Performing rectification")
+        # Create rectification matrices (R1, R2, P1, P2, Q)
+        self.R1, self.R2, self.P1, self.P2,  Q, roi1, roi2 = cv.stereoRectify(
+            self.M1, self.D1, self.M2, self.D2, img_size, self.R, self.T,  ## Inputs
+            alpha=-1, flags=0)
             
-        else:
-            self.R1 = np.eye(3, 3, dtype=np.float32)
-            self.T1 = np.zeros((3,1), dtype=np.float32)
-            self.R1t = np.concatenate((self.R1, self.T1), axis = 1)
-            self.R2t = np.concatenate((self.R, self.T), axis = 1)
-            ###self.P1 = np.concatenate((self.M1, T1), axis=1) # this is equivalent to below matrix products
-            ##self.P1 = np.concatenate((np.dot(self.M1,self.R1), np.dot(self.M1,self.T1)), axis = 1)
-            ##self.P2 = np.concatenate((np.dot(self.M2,self.R), np.dot(self.M2,self.T)), axis = 1)
-            self.P1 = np.concatenate((self.M1*self.R1, self.T1), axis = 1)
-            self.P2 = np.concatenate((self.M2*self.R, self.T), axis = 1)
-            print("P1: \n", self.P1)
-            print("P2: \n", self.P2)
 
     def get3D(self, l, r):
         if DEBUG:
@@ -71,35 +51,26 @@ class depthFinder:
             print("Right point: {}".format(r))
         lpoint = np.array([[l]], dtype=np.float32)
         rpoint = np.array([[r]], dtype=np.float32)
-        if self.rectify:
-            unl = cv.undistortPoints(src=lpoint, cameraMatrix=self.M1, distCoeffs=self.D1, R=self.R1, P=self.P1)
-            unr = cv.undistortPoints(src=rpoint, cameraMatrix=self.M2, distCoeffs=self.D2, R=self.R2, P=self.P2)
-        else:
-            unl = cv.undistortPoints(src=lpoint, cameraMatrix=self.M1, distCoeffs=self.D1, R=self.R1, P=self.P1)
-            unr = cv.undistortPoints(src=rpoint, cameraMatrix=self.M2, distCoeffs=self.D2, R=self.R , P=self.P2)
+        unl = cv.undistortPoints(src=lpoint, cameraMatrix=self.M1, distCoeffs=self.D1, R=self.R1, P=self.P1)
+        unr = cv.undistortPoints(src=rpoint, cameraMatrix=self.M2, distCoeffs=self.D2, R=self.R2, P=self.P2)
         if DEBUG:
             print("Left undistorted point: {}".format(unl))
             print("Right undistorted point: {}".format(unr))
 
 
-        if 0:
-            unl = unl.squeeze()
-            unr = unr.squeeze()
-            point3D = cv.sfm.triangulatePoints([unl,unr], [self.P1, self.P2]).squeeze()
-        else:
-            #points4D = cv.triangulatePoints(projMatr1=self.R1t, projMatr2=self.R2t, projPoints1=unl, projPoints2=unr)
-            points4D = cv.triangulatePoints(projMatr1=self.P1, projMatr2=self.P2, projPoints1=unl, projPoints2=unr)
-                                            
-            point3D = cv.convertPointsFromHomogeneous(points4D.transpose()).squeeze()
+        points4D = cv.triangulatePoints(projMatr1=self.P1, projMatr2=self.P2, projPoints1=unl, projPoints2=unr)
+        point3D = cv.convertPointsFromHomogeneous(points4D.transpose()).squeeze()
         if DEBUG:
             print("point3D: {}".format(point3D))
-            
-        np3D = np.dot(point3D.transpose(), self.R1)
-        print("point3D: {}".format(point3D))
-        print("New  3D: {}".format(np3D))
+        
+        ## Apply necessary coordinate shift
+        if 0:
+            ## It is possible to shift or rotate the coordinates here to get desired new world coordinate center
+            np3D = np.dot(point3D.transpose(), self.R1) + np.array([0,0,-320.], dtype=np.float32)
+        else:
+            np3D = point3D
 
-        return point3D
-
+        return np3D
 
 
 if __name__ == '__main__':
