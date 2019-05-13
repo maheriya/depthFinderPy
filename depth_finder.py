@@ -18,8 +18,8 @@ DEBUG = 0
 
 class depthFinder:
     def __init__(self, intrinsics, extrinsics, rectify):
-        fmt = lambda x: "%10.3f" % x
-        np.set_printoptions(formatter={'float_kind':fmt})
+        #fmt = lambda x: "%10.3f" % x
+        #np.set_printoptions(formatter={'float_kind':fmt})
 
         self.rectify = rectify
         ## Read calibration files

@@ -1,6 +1,7 @@
 #!/bin/csh -f
 
 ## For example run the code like this:
-python3 depth_finder.py --lpoint 641 519 --rpoint 642 510
+#python3 depth_finder.py --lpoint 641 519 --rpoint 642 510
 
+python3 depth_tester.py
 ## Try --help option to see all options

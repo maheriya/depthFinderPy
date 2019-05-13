@@ -20,6 +20,8 @@ DEBUG = 1
 if __name__ == '__main__':
     fmt = lambda x: "%5.0f" % x
     np.set_printoptions(formatter={'float_kind':fmt})
+    print("-------------------------------------------------------------------")
+    print("All results are in mm scale\n\n")
     intrinsics = "data/calib/intrinsics.yml"
     extrinsics = "data/calib/extrinsics.yml"
 
@@ -59,13 +61,14 @@ if __name__ == '__main__':
              6996.,                    # z11
              7190.], dtype=np.float32) # z12
     estz = np.array([p[2] for p in p3D])
-    print("Test 1, Results A: Z measurements")
+    print("\n\n---------------------------------------------------")
+    print("Test 1, Results A: Z measurements for all 6 balls\n")
     print("Estimated Z: ", estz)
     print("Measured  Z: ", mz)
     errors = estz - mz;
-    print("errors    Z: ", errors)
+    print("Errors in Z: ", errors)
     rms = np.sqrt(np.dot(errors, errors)/len(errors))
-    print("RMS error: {:.0f}".format(rms))
+    print("RMS error: {:.0f}".format(rms)) ## COMMENT: Currently this is large: 256
     ## Result of above code:
     # Point 0: [  201    70  8345]
     # Point 1: [ 1302    63  8349]
@@ -75,12 +78,63 @@ if __name__ == '__main__':
     # Point 5: [ 2080   455  7274]
     # Estimated Z:  [ 8345  8349  8336  7293  7268  7274]
     # Measured  Z:  [ 8036  8129  8290  6886  6996  7190]
-    # errors    Z:  [  309   220    46   407   272    84]
+    # errors in Z:  [  309   220    46   407   272    84]
     # RMS error: 256
 
+    ##-#######################################################################################
+    ## Test 1, Results B : Ball distances
+    ##-#######################################################################################
+    p00  = p3D[0]
+    pref = p3D[1] # Reference point
+    p02  = p3D[2]
+    p10  = p3D[3]
+    p11  = p3D[4]
+    p12  = p3D[5]
 
+    d00 = cv.norm(pref-p00);
+    d02 = cv.norm(pref-p02);
+    d10 = cv.norm(pref-p10);
+    d11 = cv.norm(pref-p11);
+    d12 = cv.norm(pref-p12);
+    print("\n\n---------------------------------------------------")
+    print("Test 1, Results B: Relative distance measurements between balls\n")
+    print("Estimated Distances: cv.norm(refball-otherball); real (X,Y,Z)):")
+    print("d00  : {:.0f}".format(d00))
+    print("d02  : {:.0f}".format(d02))
+    print("d10  : {:.0f}".format(d10))
+    print("d11  : {:.0f}".format(d11))
+    print("d12  : {:.0f}".format(d12))
+    # Expected real world distances from p01 (pref) represented by . below:
+    # m00: 1088      .     m01:  775
+    # m10: 1579  m11: 1147 m12: 1385
+    m00 = 1088.;
+    m02 = 775.;
+    m10 = 1579.;
+    m11 = 1147.;
+    m12 = 1385.;
+    print("Measured Distances:")
+    print("m00  : {:.0f}".format(m00))
+    print("m02  : {:.0f}".format(m02))
+    print("m10  : {:.0f}".format(m10))
+    print("m11  : {:.0f}".format(m11))
+    print("m12  : {:.0f}".format(m12))
 
-
+    e00 = (m00 - d00);
+    e02 = (m02 - d02);
+    e10 = (m10 - d10);
+    e11 = (m11 - d11);
+    e12 = (m12 - d12);
+    errors = np.array([e00, e02, e10, e11, e12], dtype=np.float32)
+    print("Errors:")
+    print("e00  : {:.0f}".format(e00))
+    print("e02  : {:.0f}".format(e02))
+    print("e10  : {:.0f}".format(e10))
+    print("e11  : {:.0f}".format(e11))
+    print("e12  : {:.0f}".format(e12))
+    erms = np.sqrt(np.dot(errors, errors)/len(errors))
+    print("RMS error: {:.0f}".format(erms))  ## COMMENT: This is quite small. This means that our X,Y,Z are correct, 
+    #                                                    just that the absolute (0,0,0) are not at a known accurate position
+    #                                                    at the center of the camera sensor 
 
 
 #EOF
