@@ -14,6 +14,7 @@ import depth_finder
 # Global variables. Fixed for BATFAST cameras
 pixsize = 4.8e-06 * 1000  ## Pixel size for scale; mult by 1000 for millimeter scale
 img_size = (1280, 1024)
+squareSize = 114.8
 
 DEBUG = 1
 
@@ -43,10 +44,10 @@ if __name__ == '__main__':
     ## Right R1: 355,588    599,604     783,611
     ##
     ## L Coordinates :  R0,C0
-    lpoints = np.array([[415.,533.], [641.,519.], [796.,510.],                      ## Left  p00, p01, p11
+    lpoints = np.array([[415.,533.], [641.,519.], [796.,510.],                      ## Left  p00, p01, p02
                         [425.,626.], [684.,612.], [860.,598.]], dtype=np.float32)   ## Left  p10, p11, p12
     ## R Coordinate : R0,C2
-    rpoints = np.array([[424.,502.], [642.,510.], [801.,517.],                      ## Right p00, p01, p11
+    rpoints = np.array([[424.,502.], [642.,510.], [801.,517.],                      ## Right p00, p01, p02
                         [355.,588.], [599.,604.], [783.,611.]], dtype=np.float32)   ## Right p10, p11, p12
 
     p3D = [df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ]

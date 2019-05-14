@@ -42,7 +42,7 @@ class depthFinder:
         self.R1, self.R2, self.P1, self.P2,  Q, roi1, roi2 = cv.stereoRectify(
             self.M1, self.D1, self.M2, self.D2, img_size, self.R, self.T,  ## Inputs
             alpha=-1, flags=0)
-            
+
 
     def get3D(self, l, r):
         if DEBUG:
