@@ -3,5 +3,14 @@
 ## For example run the code like this:
 #python3 depth_finder.py --lpoint 641 519 --rpoint 642 510
 
+echo "####################################################################"
+echo "Running Test1: six-ball on ground"
+echo "####################################################################"
 python3 depth_tester.py
+
+echo ""; echo ""
+echo "####################################################################"
+echo "Running Test2: Calibration pattern as example"
+echo "####################################################################"
+python3 depth_tester2.py
 ## Try --help option to see all options
