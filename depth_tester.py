@@ -14,15 +14,16 @@ import depth_finder
 # Global variables. Fixed for BATFAST cameras
 pixsize = 4.8e-06 * 1000  ## Pixel size for scale; mult by 1000 for millimeter scale
 img_size = (1280, 1024)
-squareSize = 114.8
 
 DEBUG = 1
 
 if __name__ == '__main__':
     fmt = lambda x: "%5.0f" % x
     np.set_printoptions(formatter={'float_kind':fmt})
-    print("-------------------------------------------------------------------")
+    print("\n-------------------------------------------------------------------")
     print("All results are in mm scale\n\n")
+    print("All manual measurements are from the first row center ball\n\n")
+    print("-------------------------------------------------------------------\n")
     intrinsics = "data/calib/intrinsics.yml"
     extrinsics = "data/calib/extrinsics.yml"
 
@@ -49,41 +50,25 @@ if __name__ == '__main__':
     ## R Coordinate : R0,C2
     rpoints = np.array([[424.,502.], [642.,510.], [801.,517.],                      ## Right p00, p01, p02
                         [355.,588.], [599.,604.], [783.,611.]], dtype=np.float32)   ## Right p10, p11, p12
+    rvec  = np.float32([3.5, 0.0, 0.]) ## Rotation vector. Remains constant.
+    Rt, _ = cv.Rodrigues(rvec)
 
     p3D = [df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ]
-    for i in range(len(p3D)):
-        print("Point {}: {}".format(i, p3D[i]))
-
-    mz = np.array(
-            [8036.,                    # z00
-             8129.,                    # z01
-             8290.,                    # z02
-             6886.,                    # z10
-             6996.,                    # z11
-             7190.], dtype=np.float32) # z12
-    estz = np.array([p[2] for p in p3D])
-    print("\n\n---------------------------------------------------")
-    print("Test 1, Results A: Z measurements for all 6 balls\n")
-    print("Estimated Z: ", estz)
-    print("Measured  Z: ", mz)
-    errors = estz - mz;
-    print("Errors in Z: ", errors)
-    rms = np.sqrt(np.dot(errors, errors)/len(errors))
-    print("RMS error: {:.0f}".format(rms)) ## COMMENT: Currently this is large: 256
-    ## Result of above code:
-    # Point 0: [  201    70  8345]
-    # Point 1: [ 1302    63  8349]
-    # Point 2: [ 2078    62  8336]
-    # Point 3: [  195   455  7293]
-    # Point 4: [ 1296   463  7268]
-    # Point 5: [ 2080   455  7274]
-    # Estimated Z:  [ 8345  8349  8336  7293  7268  7274]
-    # Measured  Z:  [ 8036  8129  8290  6886  6996  7190]
-    # errors in Z:  [  309   220    46   407   272    84]
-    # RMS error: 256
+    
+    ## Move origin (0,0.0) to the first row center ball (p01) 
+    np3D = [np.dot((p3D[i]-p3D[1]), Rt) for i in range(len(p3D)) ]
+    print("{}, {}, {},".format(np3D[0], np3D[1], np3D[2]))
+    print("{}, {}, {},".format(np3D[3], np3D[4], np3D[5]))
 
     ##-#######################################################################################
-    ## Test 1, Results B : Ball distances
+    ## Note: All Z measurements are now from the center ball. You don't measure distance
+    ## from camera since in this test the origin has been moved to
+    ## As result of this, the measurement test between the ball will directly correspond to
+    ## (X,Y,Z) coordinates  
+    ##-#######################################################################################
+
+    ##-#######################################################################################
+    ## Test 1 : Ball distances
     ##-#######################################################################################
     p00  = p3D[0]
     pref = p3D[1] # Reference point
@@ -99,6 +84,7 @@ if __name__ == '__main__':
     d12 = cv.norm(pref-p12);
     print("\n\n---------------------------------------------------")
     print("Test 1, Results B: Relative distance measurements between balls\n")
+    print("                   Compare these visually to the above (X,Y,Z) coordinates -- they match\n")
     print("Estimated Distances: cv.norm(refball-otherball); real (X,Y,Z)):")
     print("d00  : {:.0f}".format(d00))
     print("d02  : {:.0f}".format(d02))
@@ -171,10 +157,12 @@ if __name__ == '__main__':
                         dtype=np.float32) 
 
     p3D = [df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ]
+    ## Move origin (0,0.0) to the first row center ball (p01) 
+    np3D = [np.dot((p3D[i]-p3D[1]), Rt) for i in range(len(p3D)) ]
     for i in range(len(p3D)):
-        print("Point {}: {}".format(i, p3D[i]))
-
-    #mz = np.array()
+        print("Point {}: {}".format(i, np3D[i]))
+    print("In above output both Y and Z should be close to zero. Verify. Only X should change")
+    
 
 
 #EOF
