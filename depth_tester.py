@@ -50,7 +50,7 @@ if __name__ == '__main__':
     ## R Coordinate : R0,C2
     rpoints = np.array([[424.,502.], [642.,510.], [801.,517.],                      ## Right p00, p01, p02
                         [355.,588.], [599.,604.], [783.,611.]], dtype=np.float32)   ## Right p10, p11, p12
-    rvec  = np.float32([3.5, 0.0, 0.]) ## Rotation vector. Remains constant.
+    rvec  = np.float32([3.494, -0.01, -0.007]) ## Rotation vector. Remains constant.
     Rt, _ = cv.Rodrigues(rvec)
 
     p3D = [df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ]
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     np3D = [np.dot((p3D[i]-p3D[1]), Rt) for i in range(len(p3D)) ]
     print("{}, {}, {},".format(np3D[0], np3D[1], np3D[2]))
     print("{}, {}, {},".format(np3D[3], np3D[4], np3D[5]))
-
+    sys.exit()
     ##-#######################################################################################
     ## Note: All Z measurements are now from the center ball. You don't measure distance
     ## from camera since in this test the origin has been moved to
