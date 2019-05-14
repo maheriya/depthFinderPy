@@ -4,7 +4,7 @@
 #python3 depth_finder.py --lpoint 641 519 --rpoint 642 510
 
 echo "####################################################################"
-echo "Running Test1: six-ball on ground"
+echo "Running Test1: six balls on ground"
 echo "####################################################################"
 python3 depth_tester.py
 
