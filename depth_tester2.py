@@ -97,8 +97,8 @@ if __name__ == '__main__':
     d10 = cv.norm(pref-p10);
     d11 = cv.norm(pref-p11);
     print("\n\n---------------------------------------------------")
-    print("Test 1: Relative distance measurements between chessboard corners\n")
-    print("Estimated Distances: cv.norm(refball-otherball); real (X,Y,Z)):")
+    print("Test 2: Relative distance measurements between chessboard corners\n")
+    print("Estimated Distances: cv.norm(refcorner-othercorner); real (X,Y,Z)):")
     print("d01  : {:.0f}".format(d01))
     print("d10  : {:.0f}".format(d10))
     print("d11  : {:.0f}".format(d11))
