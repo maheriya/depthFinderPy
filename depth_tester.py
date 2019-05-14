@@ -50,7 +50,7 @@ if __name__ == '__main__':
     ## R Coordinate : R0,C2
     rpoints = np.array([[424.,502.], [642.,510.], [801.,517.],                      ## Right p00, p01, p02
                         [355.,588.], [599.,604.], [783.,611.]], dtype=np.float32)   ## Right p10, p11, p12
-    rvec  = np.float32([3.494, -0.01, -0.007]) ## Rotation vector. Remains constant.
+    rvec  = np.float32([3.496, -0.01, 0.001]) ## Rotation vector. Remains constant.
     Rt, _ = cv.Rodrigues(rvec)
 
     p3D = [df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ]
@@ -59,13 +59,15 @@ if __name__ == '__main__':
     np3D = [np.dot((p3D[i]-p3D[1]), Rt) for i in range(len(p3D)) ]
     print("{}, {}, {},".format(np3D[0], np3D[1], np3D[2]))
     print("{}, {}, {},".format(np3D[3], np3D[4], np3D[5]))
-    sys.exit()
-    ##-#######################################################################################
-    ## Note: All Z measurements are now from the center ball. You don't measure distance
-    ## from camera since in this test the origin has been moved to
-    ## As result of this, the measurement test between the ball will directly correspond to
-    ## (X,Y,Z) coordinates  
-    ##-#######################################################################################
+    
+    print('''
+##-#######################################################################################
+## Note: All Z measurements are now from the center ball. You don't measure distance
+## from camera now since in this test the origin has been moved to center ball.
+## As a result of this, the measurement test (below) will directly correspond to
+## (X,Y,Z) coordinates when applicable (i.e., sideways or forward movements)  
+##-#######################################################################################
+    ''')
 
     ##-#######################################################################################
     ## Test 1 : Ball distances
@@ -159,6 +161,13 @@ if __name__ == '__main__':
     p3D = [df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ]
     ## Move origin (0,0.0) to the first row center ball (p01) 
     np3D = [np.dot((p3D[i]-p3D[1]), Rt) for i in range(len(p3D)) ]
+    
+    print('''
+##-#######################################################################################
+## Note 2: Two additional measurements below now behave as you were expecting: 
+##-#######################################################################################
+    ''')
+
     for i in range(len(p3D)):
         print("Point {}: {}".format(i, np3D[i]))
     print("In above output both Y and Z should be close to zero. Verify. Only X should change")
