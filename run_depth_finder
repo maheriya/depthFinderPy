@@ -8,9 +8,9 @@ echo "Running Test1: six balls on ground"
 echo "####################################################################"
 python3 depth_tester.py
 
-echo ""; echo ""
-echo "####################################################################"
-echo "Running Test2: Calibration pattern as example"
-echo "####################################################################"
-python3 depth_tester2.py
-## Try --help option to see all options
+##--echo ""; echo ""
+##--echo "####################################################################"
+##--echo "Running Test2: Calibration pattern as example"
+##--echo "####################################################################"
+##--python3 depth_tester2.py
+##--## Try --help option to see all options

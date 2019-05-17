@@ -64,8 +64,14 @@ class depthFinder:
         
         ## Apply necessary coordinate shift
         if 0:
+            ##--# six-balls
+            rvec  = np.float32([3.496, -0.01, 0.001]) ## Rotation vector. Remains constant.
+            # Top-left chessboard on ground
+            #rvec  = np.float32([-1.21569432, -0.07247885, -0.12604635]) ## Rotation vector. Remains constant.
+            Rt, _ = cv.Rodrigues(rvec)
+            pref =  np.float32([110.9964, 54.002182, 0])
             ## It is possible to shift or rotate the coordinates here to get desired new world coordinate center
-            np3D = np.dot(point3D.transpose(), self.R1) + np.array([0,0,-320.], dtype=np.float32)
+            np3D = np.dot((point3D-pref), Rt) # - np.float32([-808,0,0]) 
         else:
             np3D = point3D
 
@@ -82,6 +88,9 @@ Find world coordinates from a pair of image correspondence points. For example:
                         help='YAML camera intrinsics calibration file')
     parser.add_argument('--extrinsics', type=str, default="data/calib/extrinsics.yml",
                         help='YAML camera extrinsics calibration file')
+    parser.add_argument('--noshift', action="store_false", default=True,
+                        help='Do not shift camera origin. Default is to shift it to ground plane below camera')
+
     reqargs = parser.add_argument_group('required arguments')
     reqargs.add_argument('--lpoint', nargs=2, type=float, required=True,
                         help='Coordinates of point on left image.')
