@@ -67,7 +67,7 @@ class depthFinder:
         Works on a single 3D point.
         '''
         npt = np.dot(self.Rshift, point.transpose()) + self.Tshift
-        npt = (offset + npt.transpose()).squeeze(axis=0) # Account for offset
+        npt = (self.offset + npt.transpose()).squeeze(axis=0) # Account for offset
         if (ydir == -1.):
             npt[1] *= ydir ## Make this Y-up coordinate system
         return npt
