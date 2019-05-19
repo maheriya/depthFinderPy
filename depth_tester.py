@@ -1,98 +1,82 @@
 '''
 Test the depth_finder.py script with measured world 3D points
 
+Here we shift origin in the test; depth_finder.py doesn't do origin shift
+This is to verify the algorithm itself. It also allows trying out different
+offsets
 '''
-# Python 2/3 compatibility
-from __future__ import print_function
 
 import sys
 import argparse
 import numpy as np
 import cv2 as cv
-import depth_finder
+from depth_finder import depthFinder
 
-# Global variables. Fixed for BATFAST cameras
-pixsize = 4.8e-06 * 1000  ## Pixel size for scale; mult by 1000 for millimeter scale
-img_size = (1280, 1024)
+#-############################################################################################
+# Global parameters. Fixed for BATFAST cameras
+#-############################################################################################
+pixsize    = 4.8e-06 * 1000  ## Pixel size for scale; mult by 1000 for millimeter scale
+img_size   = (1280, 1024)    ## Camera sensor size in horizontal and vertical pixels
+pwidth     = 9               ## Number of corners in horizontal direction
+pheight    = 6               ## Number of corners in vertical direction
+squareSize = 115             ## Size of squares of chessboard pattern
+ydir       = -1.             ## Make it -1 to invert Y axis to make it Y-up. OpenCV is Y-down, right handed
+#-############################################################################################
 
-DEBUG = 1
-
-
-
+## A 9x6 chessboard object points with 115 mm squares.
+# def getObjPoints(w, h, squareSize):
+#     objp = np.zeros((w*h,3), np.float32)
+#     objp[:,:2] = np.mgrid[0:w,0:h].T.reshape(-1,2)
+#     objp = objp * squareSize
+#     return objp
 
 ## A 9x6 chessboard object points with 115 mm squares
-opoints = np.float32([
-         [    0.000000,     0.000000,     0.000000],
-         [  115.000000,     0.000000,     0.000000],
-         [  230.000000,     0.000000,     0.000000],
-         [  345.000000,     0.000000,     0.000000],
-         [  460.000000,     0.000000,     0.000000],
-         [  575.000000,     0.000000,     0.000000],
-         [  690.000000,     0.000000,     0.000000],
-         [  805.000000,     0.000000,     0.000000],
-         [  920.000000,     0.000000,     0.000000],
-         [    0.000000,   115.000000,     0.000000],
-         [  115.000000,   115.000000,     0.000000],
-         [  230.000000,   115.000000,     0.000000],
-         [  345.000000,   115.000000,     0.000000],
-         [  460.000000,   115.000000,     0.000000],
-         [  575.000000,   115.000000,     0.000000],
-         [  690.000000,   115.000000,     0.000000],
-         [  805.000000,   115.000000,     0.000000],
-         [  920.000000,   115.000000,     0.000000],
-         [    0.000000,   230.000000,     0.000000],
-         [  115.000000,   230.000000,     0.000000],
-         [  230.000000,   230.000000,     0.000000],
-         [  345.000000,   230.000000,     0.000000],
-         [  460.000000,   230.000000,     0.000000],
-         [  575.000000,   230.000000,     0.000000],
-         [  690.000000,   230.000000,     0.000000],
-         [  805.000000,   230.000000,     0.000000],
-         [  920.000000,   230.000000,     0.000000],
-         [    0.000000,   345.000000,     0.000000],
-         [  115.000000,   345.000000,     0.000000],
-         [  230.000000,   345.000000,     0.000000],
-         [  345.000000,   345.000000,     0.000000],
-         [  460.000000,   345.000000,     0.000000],
-         [  575.000000,   345.000000,     0.000000],
-         [  690.000000,   345.000000,     0.000000],
-         [  805.000000,   345.000000,     0.000000],
-         [  920.000000,   345.000000,     0.000000],
-         [    0.000000,   460.000000,     0.000000],
-         [  115.000000,   460.000000,     0.000000],
-         [  230.000000,   460.000000,     0.000000],
-         [  345.000000,   460.000000,     0.000000],
-         [  460.000000,   460.000000,     0.000000],
-         [  575.000000,   460.000000,     0.000000],
-         [  690.000000,   460.000000,     0.000000],
-         [  805.000000,   460.000000,     0.000000],
-         [  920.000000,   460.000000,     0.000000],
-         [    0.000000,   575.000000,     0.000000],
-         [  115.000000,   575.000000,     0.000000],
-         [  230.000000,   575.000000,     0.000000],
-         [  345.000000,   575.000000,     0.000000],
-         [  460.000000,   575.000000,     0.000000],
-         [  575.000000,   575.000000,     0.000000],
-         [  690.000000,   575.000000,     0.000000],
-         [  805.000000,   575.000000,     0.000000],
-         [  920.000000,   575.000000,     0.000000]
-         ])
+def getObjPoints(w, h, squareSize):
+    objp = np.zeros((w*h,3), np.float32)
+    objp[:,:2] = np.mgrid[0:w,0:h].T.reshape(-1,2)
+    objp = objp * squareSize
+    return objp
 
-
-
-
-
-def print3D(pts):
-    # [r*9 + {0|4|8}]
-    for r in [0,3,5]:
+def print3D(pts, opts=None, offset=None, ydir=1.):
+    '''
+    Print 3D points as grid of sampled points. Can also print difference between
+    two sets of points while considering offset and Y-axis direction
+    '''
+    if opts is not None: ## Print the difference between pts  and opts
+        ## Account for offset and Y-axis direction
+        opts = np.float32([1.,ydir,1.]) * (opts+offset)
+        npts = pts - opts
+    else:
+        npts = pts
+    for r in [0,2,3,5]:
         pstr = ""
-        for c in [0,4,8]:
-            pstr += "{}, ".format(pts[r*9+c] - opoints[r*9+c])
+        for c in [0,2,4,8]:
+            pstr += "{}, ".format(npts[r*9 + c])
         print(pstr)
-            
+
+def getRMSErrors(pts, opts, offset, ydir):
+    '''
+    Compute RMS errors of 3D distance compared to reference object points
+    '''
+    err = [cv.norm(pts[i], (np.float32([1.,ydir,1.]) * (opts[i]+offset))) for i in range(len(pts))]
+    rms = np.sqrt(np.dot(err, err)/len(pts))
+    return rms
+
+def shiftOrigin(Rt, T, point, offset=None):
+    '''
+    Shift origin using rotation and translation vector generated based on calibration target
+    earlier.
+    Works on a single 3D point.
+    '''
+    npt = np.dot(Rt, point.transpose()) + T.transpose()
+    if offset is not None:
+        npt = offset + npt # Account for offset
+    if (ydir == -1.):
+        npt[1] *= ydir ## Make this Y-up coordinate system
+    return npt
 
 if __name__ == '__main__':
-    fmt = lambda x: "%12.4f" % x
+    fmt = lambda x: "%12.6f" % x
     np.set_printoptions(formatter={'float_kind':fmt})
     print("\n-------------------------------------------------------------------")
     print("All results are in mm scale")
@@ -101,205 +85,108 @@ if __name__ == '__main__':
     intrinsics = "data/calib/intrinsics.yml"
     extrinsics = "data/calib/extrinsics.yml"
 
+    #posefile = 'data/calib/pose_Z5300_1.yml'  # Chessboard closer to left cage
+    posefile = 'data/calib/pose_Z5300_2.yml' # Chessboard in the center of cage
     ## Instantiate depthFinder; This will carry out all the required one-time setup including rectification
-    df = depth_finder.depthFinder(intrinsics, extrinsics)
+    df = depthFinder(intrinsics, extrinsics, shift=False, offset=np.float32([0,0,0]), posefile=posefile) ## For now, don't shift origin -- we are testing it
+    fsi = cv.FileStorage(posefile, cv.FILE_STORAGE_READ)
+    if not fsi.isOpened():
+        print("Could not open file {} for reading calibration data".format(posefile))
+        sys.exit()
+    R = fsi.getNode('R').mat()
+    T = (fsi.getNode('T').mat()).squeeze()
+    print("R: \n{}\nT: \n{}".format(R, T))
 
 
     ##-#######################################################################################
-    ## Test 1: Chessboard flat on the ground.
+    ## Test 1: Chessboard perpendicular to ground
     ## Available measurements: 
     ##  Image coordinates: (x,y) on left+right images of 9 corners manually measured
     ##  World coordinates: (X,Y,Z) of top left corner. Chessboard squares size = 115 mm
     ##-#######################################################################################
-#     lpoints = np.float32([#      1          5          9
-#                           [396,531], [489,526], [583,520], # 1
-#                           [396,548], [493,542], [588,536], # 3
-#                           [397,565], [497,560], [595,554]  # 5
-#                           ])
-#     rpoints = np.float32([#      1          5          9
-#                           [411,498], [499,502], [589,505], # 1
-#                           [399,514], [488,518], [580,521], # 3
-#                           [385,530], [476,535], [571,539]  # 5
-#                           ])
-    lpoints = np.float32([
-                         [  387.343414,   381.459198],
-                         [  410.985657,   379.676788],
-                         [  435.215637,   378.934570],
-                         [  458.660950,   377.410614],
-                         [  482.471222,   376.351288],
-                         [  505.756927,   374.868744],
-                         [  529.261414,   373.749054],
-                         [  553.467712,   372.813416],
-                         [  577.255310,   371.747620],
-                         [  388.331512,   404.146088],
-                         [  412.109100,   403.194641],
-                         [  435.881989,   401.678040],
-                         [  459.408234,   400.468811],
-                         [  483.213440,   399.170563],
-                         [  507.049133,   397.958527],
-                         [  530.490601,   396.900818],
-                         [  553.972961,   395.693146],
-                         [  577.462036,   394.691406],
-                         [  389.548553,   427.373657],
-                         [  413.226135,   425.900757],
-                         [  437.270691,   424.857391],
-                         [  460.294922,   423.235168],
-                         [  483.948730,   422.135742],
-                         [  507.399658,   420.923889],
-                         [  530.912231,   419.717224],
-                         [  554.658081,   418.454468],
-                         [  577.693604,   417.421783],
-                         [  390.664948,   450.072357],
-                         [  414.090729,   449.184906],
-                         [  437.511810,   447.537415],
-                         [  461.340057,   446.312378],
-                         [  484.613922,   445.105408],
-                         [  508.145172,   443.687988],
-                         [  531.328125,   442.413940],
-                         [  555.059082,   441.228424],
-                         [  578.130127,   439.983124],
-                         [  392.157257,   473.114502],
-                         [  415.268768,   471.435944],
-                         [  439.506439,   470.369080],
-                         [  462.251862,   469.058868],
-                         [  485.637726,   467.553375],
-                         [  508.962158,   466.131409],
-                         [  531.969910,   465.150238],
-                         [  555.436401,   463.697174],
-                         [  578.875061,   462.571991],
-                         [  393.349762,   495.357269],
-                         [  416.678375,   494.007904],
-                         [  440.329987,   492.720947],
-                         [  463.356506,   491.464722],
-                         [  486.413269,   489.859497],
-                         [  509.571198,   488.713409],
-                         [  532.709839,   487.346680],
-                         [  556.234192,   485.833527],
-                         [  579.240417,   484.799500]
-        ])    
-    rpoints = np.float32([
-                         [  409.843964,   353.722687],
-                         [  431.418030,   353.679169],
-                         [  453.960022,   354.797852],
-                         [  476.226624,   355.123016],
-                         [  498.832458,   355.648041],
-                         [  521.262939,   355.498688],
-                         [  543.929871,   356.935883],
-                         [  566.887512,   357.473267],
-                         [  589.987976,   358.254852],
-                         [  410.869965,   375.541565],
-                         [  432.997742,   376.421783],
-                         [  454.850708,   376.816833],
-                         [  477.237549,   377.465424],
-                         [  499.458801,   377.920837],
-                         [  522.203552,   378.922729],
-                         [  544.910461,   379.378510],
-                         [  567.497620,   380.073944],
-                         [  590.521301,   380.909576],
-                         [  412.093567,   398.005280],
-                         [  433.492371,   398.709534],
-                         [  455.812775,   399.481812],
-                         [  477.768005,   399.580841],
-                         [  500.297546,   400.632324],
-                         [  522.749023,   401.161224],
-                         [  545.316711,   401.966492],
-                         [  568.016113,   402.661133],
-                         [  591.028137,   403.509674],
-                         [  413.120697,   419.599030],
-                         [  434.663452,   420.958557],
-                         [  456.320557,   421.136536],
-                         [  478.827393,   422.040985],
-                         [  501.091553,   422.740692],
-                         [  523.352478,   423.501923],
-                         [  545.768433,   424.204285],
-                         [  568.654419,   425.029846],
-                         [  591.329346,   425.646332],
-                         [  414.253845,   441.902557],
-                         [  435.458130,   442.620056],
-                         [  457.733276,   443.427002],
-                         [  479.432556,   444.066742],
-                         [  501.839325,   445.049927],
-                         [  524.073486,   445.487457],
-                         [  546.732178,   446.385986],
-                         [  569.144409,   447.362122],
-                         [  591.556885,   448.220703],
-                         [  415.367584,   463.587067],
-                         [  437.025543,   464.531250],
-                         [  458.897430,   465.269073],
-                         [  480.922699,   466.065735],
-                         [  502.544891,   466.729584],
-                         [  525.112183,   467.652863],
-                         [  547.398743,   468.590851],
-                         [  569.734741,   469.367340],
-                         [  592.404846,   470.197205],
-                         ])    
-    p3D = np.float32([df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ])
+    print("\n-------------------------------------------------------------------")
+    print(" Test 1 : Chessboard perpendicular to ground")
+
+    ## Create chessboard pattern to compare with
+    posefile = 'data/calib/pose_90degree_Z8009.yml' ## Contains l/rpoints for perpendicular chessboard
+    fsi = cv.FileStorage(posefile, cv.FILE_STORAGE_READ)
+    if not fsi.isOpened():
+        print("Could not open file {} for reading calibration data".format(posefile))
+        sys.exit()
+    lpoints = fsi.getNode('lpoints').mat()
+    rpoints = fsi.getNode('rpoints').mat()
+    fsi.release()
+    p3D = np.float32([df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0])])
     print("Corners without origin shift:")
     print3D(p3D)
-    cv.estimateAffine3D(opoints, p3d)
-
-    sys.exit()
-
-    #rvec = np.float32([   -1.21569432, -0.07247885,   -0.12604635]) ##    Rotation vector; chessboard flat on ground
-    #tvec = np.float32([-1042.88191484, 48.05017955, 8394.73175675]) ## Translation vector; chessboard flat on ground
+    npts  = [shiftOrigin(R, T, p, None) for p in p3D]
+    print("Corners after origin shift:")
+    print3D(npts)
     
-    # Chessboard perpendicular to ground; original rvec/tvec
-    rvec = np.float32([    [0.29818819],    [-0.13998303],    [-0.03777255]])    
-    #tvec = np.float32([-1069.72603459,  -676.62133635,  8275.26055723])
-    ## Chessboard pattern perpendicular to ground. Fine tuned rvec/tvec
-    #rvec = np.float32([[    0.0],    [-0.0],    [-0.13777255]])
-    tvec = np.float32([[-1069.72603459],  [-676.62133635],  [8275.26055723]])
-
-    Rt, _ = cv.Rodrigues(rvec)
-    #pref = np.float32([111, 54, 8418]) # top left chessboard corner
-    ## Move origin (0,0.0) to the top left corner on chessboard
-    np3D = [np.dot((p3D[i]-p3D[0]), Rt) for i in range(len(p3D)) ]
-    print("Corners after origin shift: np.dot((p3D[i]-p3D[0]), Rt)")
-    print3D(np3D)
+    ## Compare with object points
+    print("Corners difference after origin shift:")
     
-    p3d = np.expand_dims(p3D, axis=2)
-    np3D = [np.dot(Rt.T, (p3d[i]-p3d[0])).squeeze() for i in range(len(p3d)) ]
-    print("Corners after origin shift: np.dot(Rt, (p3d[i]-p3d[0]))")
-    print3D(np3D)
-    np3D = [(np.dot(Rt, p3d[i]) - tvec).squeeze() for i in range(len(p3d)) ]
-    print("Corners after origin shift: (np.dot(Rt, p3d[i]) - tvec)")
-    print3D(np3D)
-
-    sys.exit()
-    ## Result with
-    ## No origin transfer
-    ## [  111    54  8418], [  566    55  8435], [ 1026    51  8420],
-    ## [  104   134  8239], [  566   132  8216], [ 1022   128  8221],
-    ## [  101   211  8021], [  564   213  7994], [ 1023   211  8004],
-    #
-    ## Result with
-    ## rvec = np.float32([-1.21569432, -0.07247885, -0.12604635])      ## Rotation vector; chessboard flat on ground
-    ## pref = p3D[0] = [111, 54, 8418]
-    ## np3D = [np.dot((p3D[i]-p3D[0]), Rt) for i in range(len(p3D)) ]
-    ## [    0     0     0], [  453    46    12], [  907   121     9],
-    ## [  -34   192    13], [  421   276     9], [  874   332    12],
-    ## [  -68   421     9], [  388   510     7], [  843   562    15],
-    #
-    ## Result with
-    ## rvec = np.float32([-1.21569432, -0.07247885, -0.12604635])      ## Rotation vector; chessboard flat on ground
-    ## tvec = np.float32([-1042.88191484, 48.05017955, 8394.73175675]) ## Translation vector; chessboard flat on ground
-    ## pref = tvec
-    ## np3D = [np.dot((p3D[i]-tvec), Rt) for i in range(len(p3D)) ]
-    ## [ 1146   137    27], [ 1598   183    40], [ 2053   258    36],
-    ## [ 1112   329    41], [ 1567   414    36], [ 2019   469    39],
-    ## [ 1078   558    36], [ 1533   647    35], [ 1989   699    42],
-
-
-
-
-
-
-
-
-
+    ## Generate offset for comparison. X and Z are arbitrary since there is no known real location for this board
+    offset = np.float32([248, -40-(squareSize*6.+46.), npts[0][2]])
+    #offset = np.float32([2, -(squareSize*6.+46.), npts[0][2]])
+    print("Offset: ", offset)
+    opoints = getObjPoints(pwidth, pheight, squareSize)
+    print3D(npts,opoints,offset,ydir)
+    rms = getRMSErrors(npts,opoints,offset,ydir)
+    print("Total RMS error for all {} points is {}".format(len(npts), rms))
 
     ##-#######################################################################################
-    ## Test 1 : Ball distances
+    ## Test 2: Chessboard flat on the ground
+    ## Available measurements: 
+    ##  Image coordinates: (x,y) on left+right images of 9 corners manually measured
+    ##  World coordinates: (X,Y,Z) of top left corner. Chessboard squares size = 115 mm
+    print("\n\n-------------------------------------------------------------------")
+    print(" Test 2 : Chessboard flat on the ground")
+    lpoints = np.float32([#      0          4          8
+                          [396,531], [489,526], [583,520], # 0
+                          [396,548], [493,542], [588,536], # 2
+                          [397,565], [497,560], [595,554]  # 4
+                          ])
+    rpoints = np.float32([#      1          5          9
+                          [411,498], [499,502], [589,505], # 1
+                          [399,514], [488,518], [580,521], # 3
+                          [385,530], [476,535], [571,539]  # 5
+                          ])
+
+    p3D = np.float32([df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ])
+    print("Corners without origin shift:")
+    print("{}, {}, {},".format(p3D[0], p3D[1], p3D[2]))
+    print("{}, {}, {},".format(p3D[3], p3D[4], p3D[5]))
+    print("{}, {}, {},".format(p3D[6], p3D[7], p3D[8]))
+    npts  = np.float32([shiftOrigin(R, T, p, None) for p in p3D])
+    print("Corners after origin shift:")
+    print("{}, {}, {},".format(npts[0], npts[1], npts[2]))
+    print("{}, {}, {},".format(npts[3], npts[4], npts[5]))
+    print("{}, {}, {},".format(npts[6], npts[7], npts[8]))
+
+    ##-#######################################################################################
+    ## Test 3: Six balls on the ground
+    ## Available measurements: 
+    ##  Image coordinates: (x,y) on left+right images of 6 balls manually measured
+    ##  World coordinates: distance between balls
+    print("\n\n-------------------------------------------------------------------")
+    print(" Test 3 : six balls on the ground")
+    lpoints = np.float32([[415.,533.], [641.,519.], [796.,510.],    ## Left  p00, p01, p11
+                          [425.,626.], [684.,612.], [860.,598.]])   ## Left  p10, p11, p12
+    rpoints = np.float32([[424.,502.], [642.,510.], [801.,517.],    ## Right p00, p01, p11
+                          [355.,588.], [599.,604.], [783.,611.]])   ## Right p10, p11, p12
+
+    p3D = np.float32([df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ])
+    print("Points before origin shift:")
+    print("{}, {}, {},".format(p3D[0], p3D[1], p3D[2]))
+    print("{}, {}, {},".format(p3D[3], p3D[4], p3D[5]))
+    npts  = np.float32([shiftOrigin(R, T, p, None) for p in p3D])
+    print("Points after origin shift:")
+    print("{}, {}, {},".format(npts[0], npts[1], npts[2]))
+    print("{}, {}, {},".format(npts[3], npts[4], npts[5]))
+
+    ##-#######################################################################################
+    ## Ball distances
     ##-#######################################################################################
     p00  = p3D[0]
     pref = p3D[1] # Reference point
@@ -314,8 +201,7 @@ if __name__ == '__main__':
     d11 = cv.norm(pref-p11);
     d12 = cv.norm(pref-p12);
     print("\n\n---------------------------------------------------")
-    print("Test 1, Results B: Relative distance measurements between balls\n")
-    print("                   Compare these visually to the above (X,Y,Z) coordinates -- they match\n")
+    print("Test 3B: Relative distance measurements between balls\n")
     print("Estimated Distances: cv.norm(refball-otherball); real (X,Y,Z)):")
     print("d00  : {:.0f}".format(d00))
     print("d02  : {:.0f}".format(d02))
@@ -387,20 +273,21 @@ if __name__ == '__main__':
     rpoints = np.array([[383., 499.], [641., 510.], [306., 217.]],   ## Right p00, p10
                         dtype=np.float32) 
 
-    p3D = [df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ]
-    ## Move origin (0,0.0) to the first row center ball (p01) 
-    np3D = [np.dot((p3D[i]-p3D[1]), Rt) for i in range(len(p3D)) ]
-    
-    print('''
-##-#######################################################################################
-## Note 2: Two additional measurements below now behave as you were expecting: 
-##-#######################################################################################
-    ''')
+    p3D = np.float32([df.get3D(lpoints[i], rpoints[i]) for i in range(lpoints.shape[0]) ])
+    print("\n\nPoints before origin shift:")
+    print(p3D) 
 
-    for i in range(len(p3D)):
-        print("Point {}: {}".format(i, np3D[i]))
-    print("In above output both Y and Z should be close to zero. Verify. Only X should change")
-    
+    npts  = np.float32([shiftOrigin(R, T, p, None) for p in p3D])
+    print("Points after origin shift:")
+    print(npts)
+    print("Last output is expected to be X: 843   Y: 1843   Z: 5981. HOWEVER, ") 
+    print("                                  ^--X measurement doesn't seem correct here")
+    print("On the other hand, output generated by the script (300) seems correct)")
+    # Last expected output is supposed to be 
+    # X: 843    Y: 1843    Z: 5981. X doesn't seem correct here (output generated seems correct)
+    #     ^---this seems to be measured from the cage wall. Our reference X=0 is left cage wall
+    ## Output:      [  561.985718  1882.111816  6029.301758]
+
 
 
 #EOF

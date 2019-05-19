@@ -1,20 +1,11 @@
 '''
 Test the depth_finder.py script with measured world 3D points
-This is test 2. 
-Uses calibration image to align output X,Y,Z as an example of changing the coordinates of
-the output X,Y,Z. This transform is done on top of real world coordinates output by the 
-depth algorithm (without changing the depth algorithm) by simply selecting an arbitrary 
-3D point (in this case, the top-left corner of the chessboard pattern), and making that 
-the origin (0,0,0) instead of the camera. After that all the X,Y,Z values will reflect 
-this corner as origin (as a result, Z won't change; also X and Y will change as you would 
-move left/right/top/down on the chessboard.
+This is test 2. We test origin shift directly done by depth_finer.py
 
 The accuracy of the algorithm seems to be a few millimeters (less than 1cm).
- 
+We will use parallel as well as perpendicular chessboard patterns to measure
+their absolute (X,Y,Z) coordinates are output by depth_finder.py
 '''
-# Python 2/3 compatibility
-from __future__ import print_function
-
 import sys
 import argparse
 import numpy as np
@@ -25,20 +16,28 @@ import depth_finder
 # Global variables. Fixed for BATFAST cameras
 pixsize = 4.8e-06 * 1000  ## Pixel size for scale; mult by 1000 for millimeter scale
 img_size = (1280, 1024)
-squareSize = 114.8
+squareSize = 115
 DEBUG = 1
 
 if __name__ == '__main__':
-    fmt = lambda x: "%5.3f" % x
+    fmt = lambda x: "%5.0f" % x
     np.set_printoptions(formatter={'float_kind':fmt})
     print("-------------------------------------------------------------------")
     print("All results are in mm scale\n\n") ## This is embedded in the calibration matrices
+    fmt = lambda x: "%12.6f" % x
+    np.set_printoptions(formatter={'float_kind':fmt})
+    print("\n-------------------------------------------------------------------")
+    print("All results are in mm scale")
+    print("All manual measurements are from top left cage corner")
+    print("-------------------------------------------------------------------\n")
     intrinsics = "data/calib/intrinsics.yml"
     extrinsics = "data/calib/extrinsics.yml"
-
-    ## Instantiate depthFinder; This will carry out all the required one-time setup including rectification
-    df = depth_finder.depthFinder(intrinsics, extrinsics)
-
+    posefile = 'data/calib/pose_Z5300_2.yml' # Chessboard in the center of cage
+    df = depthFinder(intrinsics, extrinsics, shift=True, offset=np.float32([0,0,0]), posefile=posefile) ## For now, don't shift origin -- we are testing it
+    fsi = cv.FileStorage(posefile, cv.FILE_STORAGE_READ)
+    if not fsi.isOpened():
+        print("Could not open file {} for reading calibration data".format(posefile))
+        sys.exit()
 
     ##-#######################################################################################
     ## Test 2: Calibration target. Find coordinates of five corners
