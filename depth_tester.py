@@ -82,7 +82,7 @@ if __name__ == '__main__':
     intrinsics = "data/calib/intrinsics.yml"
     extrinsics = "data/calib/extrinsics.yml"
 
-    #posefile = 'data/calib/pose_Z5300_1.yml'  # Chessboard closer to left cage
+    posefile = 'data/calib/pose_Z5300_1.yml'  # Chessboard closer to left cage
     posefile = 'data/calib/pose_Z5300_2.yml' # Chessboard in the center of cage
     ## Instantiate depthFinder; This will carry out all the required one-time setup including rectification
     df = depthFinder(intrinsics, extrinsics, shift=False, offset=np.float32([0,0,0]), posefile=posefile) ## For now, don't shift origin -- we are testing it
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     ## Compare with object points
     print("Corners difference after origin shift:")
     ## Generate offset for comparison. X and Z are arbitrary since there is no known real location for this board
-    offset = np.float32([570, -40-(squareSize*6.+46.), npts[0][2]])
+    offset = np.float32([525, -40-(squareSize*6.+46.), 8130]) ## Fix for chessboard location difference 
     #offset = np.float32([2, -(squareSize*6.+46.), npts[0][2]])
     print("Offset: ", offset)
     opoints = getObjPoints(pwidth, pheight, squareSize)

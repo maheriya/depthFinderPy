@@ -13,26 +13,26 @@ set imgdir = "./data/images"
 ##  --offset 2.000000 -735.400024 8231
 ##cp $datadir/pose.yml $datadir/pose_90degree_Z8009.yml
 
-## First : X:  610 Y: -40 Z 5140
-##python pose_finder.py \
-##  --left-image $imgdir/left-chessboard-flat-5300-1.png \
-##  --right-image $imgdir/right-chessboard-flat-5300-1.png \
-##  --offset 610 -40 5300
-##cp $datadir/pose.yml $datadir/pose_Z5300_1.yml
+##--## First : X:  585 Y: -40 Z 5185
+##--python pose_finder.py \
+##--  --left-image $imgdir/left-chessboard-flat-5300-1.png \
+##--  --right-image $imgdir/right-chessboard-flat-5300-1.png \
+##--  --offset 585 -40 5300
+##--cp $datadir/pose.yml $datadir/pose_Z5300_1.yml
 
-##Second: X: 1315 Y: -40 Z 5185
-python pose_finder.py \
-  --left-image $imgdir/left-chessboard-flat-5300-2.png \
-  --right-image $imgdir/right-chessboard-flat-5300-2.png \
-  --offset 1315 -40 5185
-cp $datadir/pose.yml $datadir/pose_Z5300_2.yml
+##--##Second: X: 1315 Y: -40 Z 5185
+##--python pose_finder.py \
+##--  --left-image $imgdir/left-chessboard-flat-5300-2.png \
+##--  --right-image $imgdir/right-chessboard-flat-5300-2.png \
+##--  --offset 1315 -40 5185
+##--cp $datadir/pose.yml $datadir/pose_Z5300_2.yml
 
 
-## Third : X: 2320 Y: -40 Z 5140
+#### Third : X: 2275 Y: -40 Z 5185
 ##python pose_finder.py \
 ##  --left-image $imgdir/left-chessboard-flat-5300-3.png \
 ##  --right-image $imgdir/right-chessboard-flat-5300-3.png \
-##  --offset 2320 -40 5140
+##  --offset 2275 -40 5185
 ##cp $datadir/pose.yml $datadir/pose_Z5300_3.yml
 
 echo "Done"

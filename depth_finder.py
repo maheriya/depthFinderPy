@@ -115,7 +115,7 @@ Find world coordinates from a pair of image correspondence points. For example:
                         help='YAML camera intrinsics calibration file')
     parser.add_argument('--extrinsics', type=str, default="data/calib/extrinsics.yml",
                         help='YAML camera extrinsics calibration file')
-    parser.add_argument('--pose', dest='posefile', type=str, default="./data/calib/pose.yml",
+    parser.add_argument('--pose', dest='posefile', type=str, default="./data/calib/pose_Z5300_2.yml",
                         help='File name for saving results')
     parser.add_argument('--enable-shift', action="store_true", default=True,
                         help='Do not shift camera origin. This is provided for calibration purposes')
