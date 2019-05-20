@@ -24,7 +24,7 @@ ydir       = -1.             ## Make it -1 to invert Y axis to make it Y-up. Ope
 DEBUG = 0
 
 class depthFinder:
-    def __init__(self, intrinsics, extrinsics, shift, offset, posefile):
+    def __init__(self, intrinsics, extrinsics, shift, offset=np.float32([0,0,0]), posefile=None):
         self.shift = shift
         self.offset = offset
 
@@ -46,11 +46,12 @@ class depthFinder:
         self.T  = fse.getNode('T').mat()
         fse.release()
 
-        # Get pose for origin shift
-        fsp = cv.FileStorage(posefile, cv.FILE_STORAGE_READ)
-        self.Rshift = fsp.getNode('R').mat()
-        self.Tshift = fsp.getNode('T').mat()
-        fsp.release()
+        if (shift):
+            # Get pose for origin shift
+            fsp = cv.FileStorage(posefile, cv.FILE_STORAGE_READ)
+            self.Rshift = fsp.getNode('R').mat()
+            self.Tshift = fsp.getNode('T').mat()
+            fsp.release()
         
         if DEBUG: print("Performing rectification")
         # Create rectification matrices (R1, R2, P1, P2, Q)
@@ -70,6 +71,8 @@ class depthFinder:
         npt = (self.offset + npt.transpose()).squeeze(axis=0) # Account for offset
         if (ydir == -1.):
             npt[1] *= ydir ## Make this Y-up coordinate system
+        npt[0] = -1. * npt[0] + 3420 ## Invert X axis to get bottom right corner as origin as requested by Jozsef 
+
         return npt
 
     def get3D(self, l, r):

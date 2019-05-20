@@ -39,6 +39,7 @@ if __name__ == '__main__':
         print("Could not open file {} for reading calibration data".format(posefile))
         sys.exit()
 
+
     ##-#######################################################################################
     ## Test 2: Calibration target. Find coordinates of five corners
     ## Available measurements: 

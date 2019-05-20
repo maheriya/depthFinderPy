@@ -67,9 +67,20 @@ class poseFinder:
         objp = np.zeros((self.w*self.h,3), np.float32)
         objp[:,:2] = np.mgrid[0:self.w,0:self.h].T.reshape(-1,2)
         objp = objp * squareSize
-        if 1: ## If the target is parallel (or flat) to the ground 
+        if 1: ## If the target is parallel (or flat) to the ground
             objp[:,2] = -objp[:,1] ## Z = -Y [Invert for Z axis; Z reduces closer to camera]
             objp[:,1] = 0          ## Y = 0  [Flat on ground
+        if 0:
+            ## Create objp
+            objp = np.zeros((self.w*self.h,3), np.float32)
+            for hi in range(self.h):
+                for wi in range(self.w):
+                    pt = [-wi, 0, -hi]
+                    idx = hi*self.w + wi
+                    objp[idx] = pt
+                    #print("({},{}={}): {}".format(hi,wi,idx, objp[idx]))
+            objp = objp * squareSize
+            print(objp)
         ## Add offset
         objp += offset
 
