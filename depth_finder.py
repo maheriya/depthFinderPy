@@ -20,13 +20,17 @@ pwidth     = 9               ## Number of corners in horizontal direction (p sta
 pheight    = 6               ## Number of corners in vertical direction
 squareSize = 114.9           ## Size of squares of chessboard pattern
 ydir       = -1.             ## Make it -1 to invert Y axis to make it Y-up. OpenCV is Y-down, right handed
+XSHIFT     = 3420            ## Origin will be shifted to this value and X axis will be inverted (if invertx below is true)
+INVERTX    = True            ## Invert X axis using xshift so that origin is in the right and X increases towards left (this works well in Blender)
 #-############################################################################################
 DEBUG = 0
 
 class depthFinder:
-    def __init__(self, intrinsics, extrinsics, shift, offset=np.float32([0,0,0]), posefile=None):
+    def __init__(self, intrinsics, extrinsics, shift, offset=np.float32([0,0,0]), posefile=None, invertx=INVERTX, xshift=XSHIFT):
         self.shift = shift
         self.offset = offset
+        self.Xshift = xshift
+        self.invertX = invertx
 
         ## Read calibration files
         fsi = cv.FileStorage(intrinsics, cv.FILE_STORAGE_READ)
@@ -63,15 +67,16 @@ class depthFinder:
 
     def shiftOrigin(self, point):
         '''
-        Shift origin using rotation and translation vector generated based on calibration target
-        earlier.
+        Shift origin using rotation and translation vector generated based on calibration target earlier.
         Works on a single 3D point.
+        We shift X of original right max of X axis if self.invertX is True.        
         '''
         npt = np.dot(self.Rshift, point.transpose()) + self.Tshift
         npt = (self.offset + npt.transpose()).squeeze(axis=0) # Account for offset
         if (ydir == -1.):
             npt[1] *= ydir ## Make this Y-up coordinate system
-        npt[0] = -1. * npt[0] + 3420 ## Invert X axis to get bottom right corner as origin as requested by Jozsef 
+        if self.invertX:
+            npt[0] = -1. * npt[0] + self.Xshift ## Invert X axis to get bottom right corner as origin instead of bottom left
 
         return npt
 
